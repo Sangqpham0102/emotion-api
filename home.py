@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
-#from keras.models import load_model
 from tensorflow.keras.models import load_model
 from utils.preprocess import preprocess_image
 import os
@@ -52,6 +51,16 @@ def predict_emotion():
         return jsonify({"error": "No image uploaded"}), 400
 
     file = request.files['image']
+    
+    # Kiểm tra loại file
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+    if not file.filename.lower().endswith(tuple(allowed_extensions)):
+        return jsonify({"error": "Invalid file type"}), 400
+
+    # Lưu file ảnh
+    if not os.path.exists("static/images"):
+        os.makedirs("static/images")
+
     filepath = os.path.join("static/images", file.filename)
     file.save(filepath)
 
@@ -69,16 +78,20 @@ def predict_emotion():
     emotion_idx2 = predictions2.argmax()
     emotion2 = EMOTIONS2[emotion_idx2]
     
-    if emotion == emotion2:
-        final_emotion = emotion  # Nếu cả hai model đều dự đoán cùng một nhãn
+    # Chọn nhãn với độ tin cậy cao hơn
+    confidence1 = float(predictions[0][emotion_idx])
+    confidence2 = float(predictions2[0][emotion_idx2])
+
+    if confidence1 > confidence2:
+        final_emotion = emotion
     else:
-        final_emotion = emotion  # Hoặc bạn có thể chọn từ mô hình có độ tin cậy cao hơn
+        final_emotion = emotion2
 
     # Lưu kết quả vào MongoDB
     prediction_data = {
         "filename": file.filename,
-        "emotion": emotion,
-        "confidence": float(predictions[0][emotion_idx]),
+        "emotion": final_emotion,
+        "confidence": max(confidence1, confidence2),
         "timestamp": datetime.utcnow()
     }
     collection.insert_one(prediction_data)
@@ -91,4 +104,3 @@ def predict_emotion():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))  # Lấy cổng từ biến môi trường
     app.run(debug=True, host='0.0.0.0', port=port)
-
