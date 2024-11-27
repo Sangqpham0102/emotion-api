@@ -23,11 +23,7 @@ collection = db[COLLECTION_NAME]
 MODEL_PATH = "models/best_model.keras"
 model = load_model(MODEL_PATH)
 
-MODEL_PATH2 = "models/best_model1.keras"
-model2 = load_model(MODEL_PATH2)
-
-EMOTIONS = ["Anger", "Happiness", "Sadness", "Neutral", "Supperise"]
-EMOTIONS2 = ["Anger", "Happiness", "Sadness", "Neutral"]
+EMOTIONS = ["Anger", "Happiness", "Sadness", "Neutral", "Surprise"]
 
 # Hàm để chuyển đối tượng ObjectId thành chuỗi
 def objectid_to_str(obj):
@@ -51,47 +47,24 @@ def predict_emotion():
         return jsonify({"error": "No image uploaded"}), 400
 
     file = request.files['image']
-    
-    # Kiểm tra loại file
-    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
-    if not file.filename.lower().endswith(tuple(allowed_extensions)):
-        return jsonify({"error": "Invalid file type"}), 400
-
-    # Lưu file ảnh
-    if not os.path.exists("static/images"):
-        os.makedirs("static/images")
-
     filepath = os.path.join("static/images", file.filename)
     file.save(filepath)
 
     # Tiền xử lý ảnh
     image = preprocess_image(filepath)
 
-    # Dự đoán từ cả hai model
+    # Dự đoán từ mô hình
     predictions = model.predict(image)
-    predictions2 = model2.predict(image)
 
-    # Tìm nhãn có xác suất cao nhất từ cả hai model
+    # Tìm nhãn có xác suất cao nhất
     emotion_idx = predictions.argmax()
     emotion = EMOTIONS[emotion_idx]
-
-    emotion_idx2 = predictions2.argmax()
-    emotion2 = EMOTIONS2[emotion_idx2]
-    
-    # Chọn nhãn với độ tin cậy cao hơn
-    confidence1 = float(predictions[0][emotion_idx])
-    confidence2 = float(predictions2[0][emotion_idx2])
-
-    if confidence1 > confidence2:
-        final_emotion = emotion
-    else:
-        final_emotion = emotion2
 
     # Lưu kết quả vào MongoDB
     prediction_data = {
         "filename": file.filename,
-        "emotion": final_emotion,
-        "confidence": max(confidence1, confidence2),
+        "emotion": emotion,
+        "confidence": float(predictions[0][emotion_idx]),
         "timestamp": datetime.utcnow()
     }
     collection.insert_one(prediction_data)
