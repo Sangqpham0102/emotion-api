@@ -14,3 +14,4 @@ tensorflow-estimator==2.15.0
 tensorflow-hub==0.16.1
 tensorboard==2.16.2
 gunicorn==23.0.0
+Werkzeug==2.2.3
