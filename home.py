@@ -41,16 +41,14 @@ def predict_emotion():
     if 'image' not in request.files:
         return jsonify({"error": "No image uploaded"}), 400
 
-    # Lấy ảnh từ request
     file = request.files['image']
-    
-    # Đọc ảnh từ bộ nhớ (dùng io.BytesIO để xử lý ảnh trực tiếp từ bộ nhớ)
-    image = preprocess_image(io.BytesIO(file.read()))  # Dùng io.BytesIO để truyền file trực tiếp vào preprocess
+    # Chuyển file ảnh thành io.BytesIO trước khi gửi vào preprocess
+    image = preprocess_image(io.BytesIO(file.read()))
 
-    # Dự đoán cảm xúc từ mô hình
+    # Dự đoán từ mô hình
     predictions = model.predict(image)
 
-    # Xác định cảm xúc có xác suất cao nhất
+    # Tìm nhãn có xác suất cao nhất
     emotion_idx = predictions.argmax()
     emotion = EMOTIONS[emotion_idx]
 
@@ -63,7 +61,7 @@ def predict_emotion():
     }
     collection.insert_one(prediction_data)
 
-    # Chuyển đổi ObjectId thành chuỗi trước khi trả về
+    # Chuyển đổi ObjectId thành chuỗi nếu có
     prediction_data = serialize_mongo_data(prediction_data)
 
     return jsonify(prediction_data), 200
