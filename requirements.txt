@@ -3,7 +3,6 @@ pymongo==4.10.1
 tensorflow==2.16.1
 opencv-python==4.7.0.72
 python-dotenv==1.0.1
-bson==0.5.10
 gunicorn==23.0.0
 numpy==1.26.4
 pillow==10.2.0
