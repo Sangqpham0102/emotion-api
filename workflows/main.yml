@@ -1,1 +1,34 @@
+name: Push to Replicate
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_name:
+        description: 'Enter the model name, like "alice/bunny-detector"'
+        required: true
+
+jobs:
+  push_to_replicate:
+    name: Push to Replicate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install Dependencies
+        run: |
+          pip install cog
+          pip install -r requirements.txt
+
+      - name: Log in to Replicate
+        run: echo "${{ secrets.REPLICATE_API_TOKEN }}" | cog login
+
+      - name: Push Model to Replicate
+        run: cog push r8.im/${{ inputs.model_name }}
 
